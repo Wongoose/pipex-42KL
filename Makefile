@@ -10,29 +10,39 @@
 #                                                                              #
 # **************************************************************************** #
 
-NAME	= pipex.a
+NAME	= pipex
 
 CC		= gcc
 CFLAGS	= -Wall -Wextra -Werror
+INCLUDES_M	= ./mandatory/includes
 
-HEADER	= pipex.h
+SRCS		= pipex.c
+SRCS_PREFIX	= $(addprefix mandatory/, ${SRCS})
 
-SRC		= pipex.c utils.c
-OBJS	= ${SRC:c=o}
+LIBFT_DIR	= libft/
+LIBFT_LIB	= libft.a
 
 all: ${NAME}
 
-${NAME}: ${OBJS}
+${LIBFT_LIB}:
+	@make bonus -C ${LIBFT_DIR}
+
+${NAME}: ${LIBFT_LIB}
 	@echo "Compiling pipex..."
-	@${CC} ${CFLAGS} -o ${NAME} ${OBJS}
+	@${CC} ${CFLAGS} -I${INCLUDES_M} ${SRCS_PREFIX} ${LIBFT_DIR}/${LIBFT_LIB} -o ${NAME}
 	@echo "DONE!"
 
-%.o: %.c
-	@echo "Generating pipex objects..."
-	@${CC} ${CFLAGS} -c $< -o $@
+# ${NAME}: ${OBJS}
+# 	@echo "Compiling pipex..."
+# 	@${CC} ${CFLAGS} -o ${NAME} ${OBJS}
+# 	@echo "DONE!"
+
+# %.o: %.c
+# 	@echo "Generating pipex objects..."
+# 	@${CC} ${CFLAGS} -c $< -o $@
 
 clean:
-	rm -rf ${OBJS}
+	@make fclean -C ${LIBFT_DIR}
 
 fclean: clean
 	rm -rf ${NAME}
