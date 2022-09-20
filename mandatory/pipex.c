@@ -80,29 +80,51 @@ char	*get_cmd_path(char *cmd, char **envp)
 	return (cmd_path);
 }
 
+int	init_pipex(struct s_pipex *pipex, int argc, char **argv)
+{
+	pipex = malloc(sizeof(t_pipex) * 1);
+	pipex->status = 0;
+	pipex->fd_infile = open(argv[1], O_RDONLY);
+	if (pipex->fd_infile < 0)
+		printf("FAILED FD INFILE");
+	pipex->fd_outfile = open(argv[argc - 1], O_TRUNC | O_CREAT | O_RDWR, 0000644);
+	if (pipex->fd_outfile < 0)
+		printf("FAILED FD OUTFILE");
+	if (pipe(pipex->pipe) < 0)
+		return (-1);
+	return (0);
+}
+
 int	main(int argc, char **argv, char **envp)
 {
-	char	**options; 
-	char	*cmd;
-	char	*cmd_path;
-	int		i;
+	struct s_pipex	pipex;
 
-	cmd = argv[1];
-	cmd_path = get_cmd_path(cmd, envp);
-	if (!cmd_path)
+	if (init_pipex(&pipex, argc, argv) == -1)
+		return (-1);
+	// has bug if pipe() here
+	pipex.pid1 = fork();
+	if (pipex.pid1 == -1)
+		return (-1);
+	if (pipex.pid1 == 0)
 	{
-		printf("ERROR: No command path found!");
-		return (0);
+		// child 1 process
+		init_child_one(&pipex, argv, envp);
 	}
-	i = 0;
-	options = (char **)malloc(sizeof(char *) * argc);
-	while (i < argc)
+	pipex.pid2 = fork();
+	if (pipex.pid2 == -1)
+		return (-2);
+	if (pipex.pid2 == 0)
 	{
-		options[i] = argv[i + 1];
-		i++;
+		// child 2 process
+		usleep(5000000);
+		init_child_two(&pipex, argv, envp);
 	}
-	options[i] = NULL;
-	execve(cmd_path, options, envp);
-	printf("Victory!");
+	close(pipex.pipe[0]);
+	close(pipex.pipe[1]);
+	close(pipex.fd_infile);
+	close(pipex.fd_outfile);
+	waitpid(pipex.pid1, 0, 0);
+	waitpid(pipex.pid2, 0, 0);
+	printf("\n\nPIPEX DONE!!\n");
 	return (0);
 }

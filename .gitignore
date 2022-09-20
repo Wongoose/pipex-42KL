@@ -3,3 +3,6 @@ a.out
 resources
 .vscode
 pipex
+infile.txt
+outifle.txt
+secret.c

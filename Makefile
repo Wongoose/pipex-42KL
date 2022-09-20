@@ -16,7 +16,7 @@ CC		= gcc
 CFLAGS	= -Wall -Wextra -Werror
 INCLUDES_M	= ./mandatory/includes
 
-SRCS		= pipex.c
+SRCS		= pipex.c helper.c utils.c
 SRCS_PREFIX	= $(addprefix mandatory/, ${SRCS})
 
 LIBFT_DIR	= libft/
