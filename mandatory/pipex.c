@@ -1,130 +1,83 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   pipex.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: zwong <zwong@student.42kl.edu.my>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2022/09/22 11:05:40 by zwong             #+#    #+#             */
+/*   Updated: 2022/09/22 11:30:09 by zwong            ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "includes/pipex.h"
 
-// End of the body function, when program fails to find a cmd_path,
-// then free all
-void	free_all_paths(char **split_paths)
+void	init_child_one(struct s_pipex *pipex, char **argv, char **envp)
 {
-	int	i;
-
-	i = 0;
-	while (split_paths[i])
-		free(split_paths[i++]);
-	free(split_paths);
+	dup2(pipex->pipe[1], STDOUT_FILENO);
+	close(pipex->pipe[0]);
+	dup2(pipex->fd_infile, STDIN_FILENO);
+	pipex->cmd_args = ft_split(argv[2], ' ');
+	execute_cmd(pipex, envp);
 }
 
-// Appends cmd string to each path to check whether it is valid,
-// If has a valid path, returns final valid "cmd_path".
-char	*check_cmd_path(char **split_paths, char *cmd)
+void	init_child_two(struct s_pipex *pipex, char **argv, char **envp)
 {
-	int		i;
-	char	*cmd_path;
-
-	i = 0;
-	while (split_paths[i])
-	{
-		cmd_path = ft_strjoin(split_paths[i], cmd);
-		if (access(cmd_path, F_OK | X_OK) == 0)
-			return (cmd_path);
-		free(cmd_path);
-		i++;
-	}
-	return (NULL);
+	dup2(pipex->pipe[0], 0);
+	close(pipex->pipe[1]);
+	dup2(pipex->fd_outfile, 1);
+	pipex->cmd_args = ft_split(argv[3], ' ');
+	execute_cmd(pipex, envp);
 }
 
-// This function first finds the occurence of "PATH=" in envp,
-// then breakdown all the paths into "split_paths" 
-char	**get_split_paths(char **envp)
+/* 
+	FROM ntan-wan
+	1. open(..., 0644)
+	-  "0644" is the permission bit.
+	-  The first digit '0' in "0644" selects the set user ID on execution (4) 
+	   and set group ID on execution (2) and sticky (1) attributes.
+	   When an executable file's setuid permission is set, users may execute 
+	   that program with a level of access that matches the user who owns the 
+	   file.
+	Example :
+	(ugs = set user ID, set group ID, sticky)
+	decimal ->		"0"		"6"		 "4"	 "4"
+	binary  ->		"000"	"110"	"100"	"100"
+	permission ->	"ugs"	"rwx"	"rwx"	"rwx"
+	who ->					user	group	others
+ */
+
+void	init_pipex(struct s_pipex *pipex, int argc, char **argv)
 {
-	int		i;
-	char	*env_path;
-	char	**split_paths;
-
-	i = 0;
-	while (envp[i])
-	{
-		env_path = ft_strnstr(envp[i], "PATH=", 5);
-		if (env_path)
-		{
-			env_path = ft_strdup(env_path);
-			break ;
-		}
-		i++;
-	}
-	split_paths = ft_split(env_path, ':');
-	free(env_path);
-	return (split_paths);
-}
-
-// loop through env and attempt to find "PATH=" which contains all shell paths
-// attempt to add cmd (e.g. ls) to each possible path and see if it exists
-// if exists, returns the whole cmd path
-char	*get_cmd_path(char *cmd, char **envp)
-{
-	int		i;
-	char	**split_paths;
-	char	*cmd_path;
-
-	split_paths = get_split_paths(envp);
-	i = 0;
-	while (split_paths[i])
-	{
-		split_paths[i]= ft_strjoin(split_paths[i], "/");
-		i++;
-	}
-	cmd_path = check_cmd_path(split_paths, cmd);
-	if (!cmd_path)
-	{
-		free_all_paths(split_paths);
-		return (NULL);
-	}
-	return (cmd_path);
-}
-
-int	init_pipex(struct s_pipex *pipex, int argc, char **argv)
-{
-	pipex = malloc(sizeof(t_pipex) * 1);
-	pipex->status = 0;
 	pipex->fd_infile = open(argv[1], O_RDONLY);
 	if (pipex->fd_infile < 0)
-		printf("FAILED FD INFILE");
-	pipex->fd_outfile = open(argv[argc - 1], O_TRUNC | O_CREAT | O_RDWR, 0000644);
+		err_exit("Failed to open infile");
+	pipex->fd_outfile = open(argv[argc - 1], O_TRUNC | O_CREAT | O_RDWR, 0644);
 	if (pipex->fd_outfile < 0)
-		printf("FAILED FD OUTFILE");
+		err_exit("Failed to open outfile");
 	if (pipe(pipex->pipe) < 0)
-		return (-1);
-	return (0);
+		err_exit("Failed to execute pipe() command");
 }
 
 int	main(int argc, char **argv, char **envp)
 {
 	struct s_pipex	pipex;
 
-	if (init_pipex(&pipex, argc, argv) == -1)
-		return (-1);
-	// has bug if pipe() here
+	if (argc != 5)
+		invalid_argc(argc);
+	init_pipex(&pipex, argc, argv);
 	pipex.pid1 = fork();
 	if (pipex.pid1 == -1)
-		return (-1);
+		err_exit("Failed to 1st fork()");
 	if (pipex.pid1 == 0)
-	{
-		// child 1 process
 		init_child_one(&pipex, argv, envp);
-	}
 	pipex.pid2 = fork();
 	if (pipex.pid2 == -1)
-		return (-2);
+		err_exit("Failed to 2nd fork()");
 	if (pipex.pid2 == 0)
-	{
-		// child 2 process
-		usleep(5000000);
 		init_child_two(&pipex, argv, envp);
-	}
-	close(pipex.pipe[0]);
-	close(pipex.pipe[1]);
-	close(pipex.fd_infile);
-	close(pipex.fd_outfile);
+	close_all_fd(&pipex);
 	waitpid(pipex.pid1, 0, 0);
 	waitpid(pipex.pid2, 0, 0);
-	printf("\n\nPIPEX DONE!!\n");
 	return (0);
 }
