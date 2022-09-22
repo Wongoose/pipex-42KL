@@ -1,0 +1,7 @@
+main.c
+a.out
+resources
+check-*
+notes*
+*.o
+*.a
