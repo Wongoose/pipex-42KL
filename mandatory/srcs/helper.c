@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "includes/pipex.h"
+#include "../includes/pipex.h"
 
 // Appends cmd string to each path to check whether it is valid,
 // If has a valid path, returns final valid "cmd_path".
@@ -31,7 +31,8 @@ char	*check_cmd_path(char **split_paths, char *cmd)
 	return (NULL);
 }
 
-// then breakdown all the paths into "split_paths" 
+// Find "PATH=" in environment variables
+// then breakdown all the paths into array of strings 
 char	**get_split_paths(char **envp)
 {
 	int		i;
@@ -50,27 +51,25 @@ char	**get_split_paths(char **envp)
 		i++;
 	}
 	split_paths = ft_split(env_path, ':');
-	free(env_path);
-	return (split_paths);
-}
-
-// This function first finds the occurence of "PATH=" in envp,
-// loop through env and attempt to find "PATH=" which contains all shell paths
-// attempt to add cmd (e.g. ls) to each possible path and see if it exists
-// if exists, returns the whole cmd path
-char	*get_cmd_path(char *cmd, char **envp)
-{
-	int		i;
-	char	**split_paths;
-	char	*cmd_path;
-
-	split_paths = get_split_paths(envp);
 	i = 0;
 	while (split_paths[i])
 	{
 		split_paths[i] = ft_strjoin(split_paths[i], "/");
 		i++;
 	}
+	free(env_path);
+	return (split_paths);
+}
+
+// After splitting possible paths
+// Attempt to add cmd (e.g. ls) to each possible path and see if it exists
+// if exists, returns the whole cmd path
+char	*get_cmd_path(char *cmd, char **envp)
+{
+	char	**split_paths;
+	char	*cmd_path;
+
+	split_paths = get_split_paths(envp);
 	cmd_path = check_cmd_path(split_paths, cmd);
 	if (!cmd_path)
 	{
@@ -80,6 +79,14 @@ char	*get_cmd_path(char *cmd, char **envp)
 	return (cmd_path);
 }
 
+// Function runs directly from each child
+// Get command path of the given command
+// (each shell command belongs somewhere in the computer)
+// execve(): This is a built in function that runs shell commands!
+// 1. Give the full command path
+// 2. Give the arguments of the command (e.g. "ls -la")
+// 3. Give the built-in envronment pointer variable
+// VOILA: Shell command will be executed!
 void	execute_cmd(struct s_pipex *pipex, char **envp)
 {
 	char	*cmd;

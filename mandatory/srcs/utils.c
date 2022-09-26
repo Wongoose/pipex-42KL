@@ -10,14 +10,17 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "includes/pipex.h"
+#include "../includes/pipex.h"
 
+// perror is a built-in function to return error in the terminal
+// STDERR = 2
 void	err_exit(char *err)
 {
 	perror(err);
 	exit(1);
 }
 
+// I putstr into fd 2 cause that is STDERR!
 void	invalid_argc(int argc)
 {
 	if (argc < 5)
@@ -39,6 +42,7 @@ void	free_all_paths(char **split_paths)
 	free(split_paths);
 }
 
+// Extra function to close all existing files
 void	close_all_fd(struct s_pipex *pipex)
 {
 	close(pipex->pipe[0]);

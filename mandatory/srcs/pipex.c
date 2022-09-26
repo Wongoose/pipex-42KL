@@ -10,8 +10,13 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "includes/pipex.h"
+#include "../includes/pipex.h"
 
+// This is a forked child
+// dup2: Copy old fd and create a new fd (both have the same read pointer)
+// cmd_args: Project takes 2 commands in total.
+// So, child 1 only splits the arguments of the 1st command
+// cmd_args is needed later when executing shell command
 void	init_child_one(struct s_pipex *pipex, char **argv, char **envp)
 {
 	dup2(pipex->pipe[1], STDOUT_FILENO);
@@ -21,6 +26,7 @@ void	init_child_one(struct s_pipex *pipex, char **argv, char **envp)
 	execute_cmd(pipex, envp);
 }
 
+// Same logic as Child 1
 void	init_child_two(struct s_pipex *pipex, char **argv, char **envp)
 {
 	dup2(pipex->pipe[0], 0);
@@ -59,6 +65,12 @@ void	init_pipex(struct s_pipex *pipex, int argc, char **argv)
 		err_exit("Failed to execute pipe() command");
 }
 
+// First, check for invalid argument count
+// init_pipex: Initialize pipex infile, outfile, and pipe
+// get_split_paths: Search through all possible command paths
+// fork(): Split processes into child and parent (TWICE)
+// close all files when done
+// waitpid: wait in order of children response (when child is done)
 int	main(int argc, char **argv, char **envp)
 {
 	struct s_pipex	pipex;
