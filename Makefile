@@ -14,37 +14,45 @@ NAME	= pipex
 
 CC		= gcc
 CFLAGS	= -Wall -Wextra -Werror
-INCLUDES_M	= ./mandatory/includes
+INCLUDES	= ./mandatory/includes
 
 SRCS		= pipex.c helper.c utils.c
-SRCS_PREFIX	= $(addprefix mandatory/srcs/, ${SRCS})
+SRCS_PATH	= $(addprefix mandatory/srcs/, ${SRCS})
+OBJS		= ${SRCS_PATH:.c=.o}
 
 LIBFT_DIR	= libft/
 LIBFT_LIB	= libft.a
+
+#COMMANDS
 
 all: ${NAME}
 
 ${LIBFT_LIB}:
 	@make bonus -C ${LIBFT_DIR}
 
-${NAME}: ${LIBFT_LIB}
-	@echo "COMPILING PIPEX..."
-	@${CC} ${CFLAGS} -I${INCLUDES_M} ${SRCS_PREFIX} ${LIBFT_DIR}/${LIBFT_LIB} -o ${NAME}
-	@echo "DONE!"
-
-# ${NAME}: ${OBJS}
-# 	@echo "Compiling pipex..."
-# 	@${CC} ${CFLAGS} -o ${NAME} ${OBJS}
-# 	@echo "DONE!"
-
-# %.o: %.c
-# 	@echo "Generating pipex objects..."
-# 	@${CC} ${CFLAGS} -c $< -o $@
+${NAME}: ${LIBFT_LIB} ${OBJS}
+	@echo -e "${YELLOW}COMPILING PIPEX...${DEFAULT}"
+	@${CC} ${CFLAGS} -I${INCLUDES} ${OBJS} ${LIBFT_DIR}/${LIBFT_LIB} -o ${NAME}
+	@echo -e "${GREEN}COMPILE DONE!${DEFAULT}"
 
 clean:
-	@make fclean -C ${LIBFT_DIR}
+	@echo -e "${YELLOW}CLEANING FILES...${DEFAULT}"
+	@make clean -C ${LIBFT_DIR}
+	@rm -rf ${OBJS}
+	@echo -e "${GREEN}CLEANING DONE!${DEFAULT}"
 
 fclean: clean
+	@echo -e "${YELLOW}CLEANING FILES...${DEFAULT}"
+	@make fclean -C ${LIBFT_DIR}
 	@rm -rf ${NAME}
+	@echo -e "${GREEN}CLEANING DONE!${DEFAULT}"
 
 re: fclean all
+
+.PHONY:	all clean fclean re
+
+#COLORS
+RED = \033[1;31m
+GREEN = \033[1;32m
+YELLOW = \033[1;33m
+DEFAULT = \033[0m
