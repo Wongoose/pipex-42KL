@@ -6,7 +6,7 @@
 /*   By: zwong <zwong@student.42kl.edu.my>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/09/22 11:05:40 by zwong             #+#    #+#             */
-/*   Updated: 2022/09/22 11:30:09 by zwong            ###   ########.fr       */
+/*   Updated: 2022/09/29 13:03:37 by zwong            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,8 +60,8 @@ void	init_child_two(struct s_pipex *pipex, char **argv, char **envp)
 // A pipe is a connection between two processes, inter-process communication
 // pipe[2] has a read-end, and a write-end
 // when a write-end is opened, the read-end will wait and anticipate for data
-// USAGE in this project: Child 2 can wait for Child 1 to finish writing in the write-end
-// (i.e. pipe[1])
+// USAGE in this project: Child 2 can wait for Child 1 to finish writing in
+// the write-end (i.e. pipe[1])
 void	init_pipex(struct s_pipex *pipex, int argc, char **argv)
 {
 	pipex->fd_infile = open(argv[1], O_RDONLY);
