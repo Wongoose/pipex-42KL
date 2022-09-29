@@ -13,7 +13,10 @@
 #include "../includes/pipex.h"
 
 // This is a forked child
-// dup2: Copy old fd and create a new fd (both have the same read pointer)
+// dup2: Copy old fd and create a new fd (both have the same read/write pointer)
+// This is just preparing to call a shell command
+// A normal shell CMD will just STDOUT in the terminal
+// I am just linking it to pipe[1], so it give the data to "Child 2" later ;)
 // cmd_args: Project takes 2 commands in total.
 // So, child 1 only splits the arguments of the 1st command
 // cmd_args is needed later when executing shell command
@@ -53,6 +56,12 @@ void	init_child_two(struct s_pipex *pipex, char **argv, char **envp)
 	who ->					user	group	others
  */
 
+// What even is pipe()?
+// A pipe is a connection between two processes, inter-process communication
+// pipe[2] has a read-end, and a write-end
+// when a write-end is opened, the read-end will wait and anticipate for data
+// USAGE in this project: Child 2 can wait for Child 1 to finish writing in the write-end
+// (i.e. pipe[1])
 void	init_pipex(struct s_pipex *pipex, int argc, char **argv)
 {
 	pipex->fd_infile = open(argv[1], O_RDONLY);
